@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0  # ZooKeeper image version from Confluent
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka-network                      # Attach to Kafka network for inter container communication
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0     # Kafka broker image from Confluent
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1                  # Unique ID for the Kafka broker in the cluster
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # ZooKeeper connection
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # How to reach Kafka from clients
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # Allows automatic creation of topics
+    depends_on:
+      - zookeeper                         # Ensure ZooKeeper starts before Kafka
+    networks:
+      - kafka-network                     # Attach to shared Kafka network
+
+networks:
+  kafka-network:
+    external: true                        # Uses a pre-created external Docker network for Kafka/ZooKeeper
